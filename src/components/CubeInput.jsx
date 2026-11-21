@@ -1,4 +1,10 @@
 import { useRef, useState } from 'react'
+import {
+  FACE_NAMES,
+  FACE_VIEWS,
+  getMissingByFace,
+  validateCube,
+} from '../utils/cubeValidator'
 
 const CENTER_INDEX = 4
 const EDITABLE_PER_FACE = 8
@@ -25,6 +31,12 @@ const FACES = [
 ]
 
 const TOTAL_EDITABLE = FACES.length * EDITABLE_PER_FACE
+
+const LEVEL_STATUS_TEXT = {
+  passed: 'Passed',
+  failed: 'Failed',
+  skipped: 'Not checked',
+}
 
 function createEmptyFace(centerColor) {
   const face = Array(9).fill(null)
@@ -64,6 +76,8 @@ function CubeInput() {
   const [selectedColor, setSelectedColor] = useState('red')
   // Each entry: { cube: <whole cube before an action>, faceId: <face it changed> }
   const [history, setHistory] = useState([])
+  // { cube: <the cube that was checked>, result: <validator output> }
+  const [validation, setValidation] = useState(null)
   const confirmRef = useRef(null)
 
   // Everything below is calculated from state, never stored separately.
@@ -82,6 +96,21 @@ function CubeInput() {
   const overfilled = colorCounts.filter(
     (color) => color.count > STICKERS_PER_COLOR
   )
+
+  const missingByFace = getMissingByFace(cube)
+  const isComplete = missingByFace.length === 0
+  // A result only counts if it was computed for the cube on screen now.
+  // Any edit creates a new cube object, so old results disappear by themselves.
+  const result =
+    validation && validation.cube === cube ? validation.result : null
+  const resultIsStale = validation !== null && result === null
+
+  const view = FACE_VIEWS[selectedFaceId]
+  function describeNeighbor(side) {
+    const neighborId = view[side]
+    const centerColor = cube[neighborId][CENTER_INDEX]
+    return `${FACE_NAMES[neighborId]} (${getColorLabel(centerColor).toLowerCase()})`
+  }
 
   function saveSnapshot(faceId) {
     setHistory((current) => [...current, { cube, faceId }])
@@ -126,6 +155,11 @@ function CubeInput() {
     setHistory((current) => current.slice(0, -1))
   }
 
+  function handleValidate() {
+    if (!isComplete) return
+    setValidation({ cube, result: validateCube(cube) })
+  }
+
   function openResetAllDialog() {
     confirmRef.current?.showModal()
   }
@@ -145,7 +179,9 @@ function CubeInput() {
         <h2>Enter your cube colors</h2>
         <p className="cube-input-intro">
           Choose a face, pick a color, then click each sticker to match your
-          physical cube. Each face&apos;s center is fixed.
+          physical cube. Look at every face from outside the cube: Up with the
+          Back side at the top, Down with the Front side at the top, and every
+          other face with Up at the top. Each face&apos;s center is fixed.
         </p>
 
         <div className="face-selector" role="group" aria-label="Cube faces">
@@ -190,6 +226,11 @@ function CubeInput() {
               {selectedFace.name} face ({selectedFace.id}) ·{' '}
               {getColorLabel(selectedFace.color)} center
             </h3>
+            <p className="face-orientation">
+              Top edge touches {describeNeighbor('top')}, bottom{' '}
+              {describeNeighbor('bottom')}, left {describeNeighbor('left')},
+              right {describeNeighbor('right')}.
+            </p>
             <div className="face-grid">
               {stickers.map((color, index) => {
                 const isCenter = index === CENTER_INDEX
@@ -296,6 +337,81 @@ function CubeInput() {
                   has exactly {STICKERS_PER_COLOR} of each color.
                 </p>
               ))}
+            </div>
+
+            <div className="validation">
+              <h3 className="counts-title">Check the cube</h3>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={handleValidate}
+                disabled={!isComplete}
+              >
+                Validate cube
+              </button>
+
+              {!isComplete && (
+                <p className="validation-hint">
+                  Enter every sticker first. Still missing:{' '}
+                  {missingByFace
+                    .map((face) => `${face.name} ${face.count}`)
+                    .join(', ')}
+                  .
+                </p>
+              )}
+
+              {resultIsStale && (
+                <p className="validation-hint">
+                  The cube changed since the last check. Validate again.
+                </p>
+              )}
+
+              {result && (
+                <div
+                  className={`validation-result is-${result.status}`}
+                  role="status"
+                >
+                  <h4>
+                    {result.status === 'valid'
+                      ? 'Valid: every check passed'
+                      : result.status === 'invalid'
+                        ? 'Invalid: this cannot be a real cube yet'
+                        : 'Incomplete: some stickers are missing'}
+                  </h4>
+                  <ol className="validation-levels">
+                    {result.levels.map((level) => (
+                      <li key={level.id} className={`level is-${level.status}`}>
+                        <span className="level-title">
+                          {level.title}
+                          <span className="level-status">
+                            {LEVEL_STATUS_TEXT[level.status]}
+                          </span>
+                        </span>
+                        {level.problems.length > 0 && (
+                          <ul className="level-problems">
+                            {level.problems.map((problem) => (
+                              <li key={problem}>{problem}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                  {result.status === 'valid' ? (
+                    <p className="validation-note">
+                      These checks show the colors you entered could belong to
+                      a legal cube that can be solved. They cannot show that
+                      you entered what your physical cube really looks like.
+                    </p>
+                  ) : (
+                    <p className="validation-note">
+                      Checks stop at the first level that fails, because later
+                      results would be unreliable. Fix the problems, then
+                      validate again.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
