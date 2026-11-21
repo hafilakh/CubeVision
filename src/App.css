@@ -1,3 +1,149 @@
+@media (max-width: 900px) {
+  .cube-input {
+    padding: 64px 20px;
+  }
+
+  .cube-input-layout {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}
+
+.face-status {
+  margin: 12px 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.face-actions {
+  margin-top: 20px;
+}
+
+.btn-secondary {
+  padding: 10px 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-strong);
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--surface);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.face-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.sticker {
+  cursor: pointer;
+  transition: transform 0.1s, filter 0.2s;
+}
+
+.sticker:not(.sticker-locked):hover {
+  filter: brightness(1.12);
+  transform: scale(1.03);
+}
+
+.sticker-locked {
+  cursor: not-allowed;
+}
+.cube-input {
+  padding: 96px 24px;
+  border-top: 1px solid var(--border);
+}
+
+.cube-input-inner {
+  max-width: var(--container);
+  margin: 0 auto;
+}
+
+.cube-input h2 {
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  letter-spacing: -0.02em;
+}
+
+.cube-input-intro {
+  max-width: 560px;
+  margin-bottom: 32px;
+}
+
+.cube-input-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 48px;
+  align-items: start;
+}
+
+.face-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+  width: min(100%, 320px);
+  aspect-ratio: 1 / 1;
+  padding: 7px;
+  border-radius: var(--radius-md);
+  background: #000;
+}
+
+.sticker {
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+}
+
+.sticker-empty {
+  background: var(--surface-2);
+  border: 2px dashed var(--border-strong);
+}
+
+.controls h3 {
+  font-size: 1.125rem;
+}
+
+.palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.swatch {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 2px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  transition: transform 0.1s, box-shadow 0.2s;
+}
+
+.swatch:hover {
+  transform: translateY(-2px);
+}
+
+.swatch.is-selected {
+  border-color: var(--text-strong);
+  box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--text-strong);
+}
+
+.selected-readout {
+  margin: 0;
+}
+
+.selected-readout strong {
+  color: var(--text-strong);
+}
+
 .features {
   padding: 96px 24px;
 }
