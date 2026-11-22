@@ -75,6 +75,8 @@ function CubeInput() {
   const [selectedFaceId, setSelectedFaceId] = useState(FACES[0].id)
   const [selectedColor, setSelectedColor] = useState('red')
   // Each entry: { cube: <whole cube before an action>, faceId: <face it changed> }
+  // Undo remembers previous cube states.
+  // This lets users restore colors after painting or resetting.
   const [history, setHistory] = useState([])
   // { cube: <the cube that was checked>, result: <validator output> }
   const [validation, setValidation] = useState(null)
