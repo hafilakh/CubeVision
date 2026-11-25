@@ -24,11 +24,16 @@ function getWorker() {
     else request.resolve(result)
   }
 
-  worker.onerror = () => {
-    rejectAll('The solver worker crashed.')
-    worker.terminate()
-    worker = null
-  }
+  worker.onerror = (event) => {
+  console.error('Solver worker error:', event)
+  console.error('Error message:', event.message)
+  console.error('Error file:', event.filename)
+  console.error('Error line:', event.lineno)
+
+  rejectAll(event.message || 'The solver worker crashed.')
+  worker.terminate()
+  worker = null
+}
 
   return worker
 }
