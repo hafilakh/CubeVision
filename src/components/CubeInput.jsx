@@ -5,6 +5,8 @@ import {
   getMissingByFace,
   validateCube,
 } from '../utils/cubeValidator'
+import { describeMove } from '../utils/describeMove'
+import { solveCubeAsync, warmUpSolver } from '../utils/solveCubeAsync'
 
 const CENTER_INDEX = 4
 const EDITABLE_PER_FACE = 8
@@ -69,17 +71,28 @@ function describeSticker(faceName, index, color) {
   return `${faceName} face, row ${row}, column ${column}: ${state}${locked}`
 }
 
+// { U: 'white', R: 'red', ... } read from the six fixed centers.
+function getCenterColors(cube) {
+  return Object.fromEntries(
+    FACES.map((face) => [
+      face.id,
+      getColorLabel(cube[face.id][CENTER_INDEX]).toLowerCase(),
+    ])
+  )
+}
+
 function CubeInput() {
   // All six faces live in one object: { U: [9], D: [9], F: [9], ... }
   const [cube, setCube] = useState(createEmptyCube)
   const [selectedFaceId, setSelectedFaceId] = useState(FACES[0].id)
   const [selectedColor, setSelectedColor] = useState('red')
   // Each entry: { cube: <whole cube before an action>, faceId: <face it changed> }
-  // Undo remembers previous cube states.
-  // This lets users restore colors after painting or resetting.
   const [history, setHistory] = useState([])
   // { cube: <the cube that was checked>, result: <validator output> }
   const [validation, setValidation] = useState(null)
+  // { cube: <the cube being solved>, status: 'loading' | 'done' | 'failed',
+  //   outcome?: <solver output>, message?: <text> }
+  const [solution, setSolution] = useState(null)
   const confirmRef = useRef(null)
 
   // Everything below is calculated from state, never stored separately.
@@ -106,6 +119,12 @@ function CubeInput() {
   const result =
     validation && validation.cube === cube ? validation.result : null
   const resultIsStale = validation !== null && result === null
+
+  // Same idea for solutions. A solver answer that arrives after the cube
+  // changed is stored, but never shown, because its cube no longer matches.
+  const solveEntry = solution && solution.cube === cube ? solution : null
+  const isSolving = solveEntry !== null && solveEntry.status === 'loading'
+  const canSolve = result !== null && result.status === 'valid' && !isSolving
 
   const view = FACE_VIEWS[selectedFaceId]
   function describeNeighbor(side) {
@@ -159,7 +178,35 @@ function CubeInput() {
 
   function handleValidate() {
     if (!isComplete) return
-    setValidation({ cube, result: validateCube(cube) })
+    const outcome = validateCube(cube)
+    setValidation({ cube, result: outcome })
+    // Start the solver's one-time setup early, so Solve feels faster.
+    if (outcome.status === 'valid') {
+      warmUpSolver().catch(() => {})
+    }
+  }
+
+  async function handleSolve() {
+    if (!canSolve) return
+
+    const requestCube = cube // remember which cube this request is for
+    setSolution({ cube: requestCube, status: 'loading' })
+
+    try {
+      const outcome = await solveCubeAsync(requestCube)
+      // Only keep the answer if this request is still the current one.
+      setSolution((current) =>
+        current && current.cube === requestCube
+          ? { cube: requestCube, status: 'done', outcome }
+          : current
+      )
+    } catch (error) {
+      setSolution((current) =>
+        current && current.cube === requestCube
+          ? { cube: requestCube, status: 'failed', message: error.message }
+          : current
+      )
+    }
   }
 
   function openResetAllDialog() {
@@ -173,6 +220,81 @@ function CubeInput() {
   function confirmResetAll() {
     resetAll()
     closeResetAllDialog()
+  }
+
+  function renderSolution() {
+    if (!solveEntry) return null
+
+    if (solveEntry.status === 'loading') {
+      return (
+        <div className="solve-loading" role="status">
+          <span className="spinner" aria-hidden="true" />
+          <span>
+            Calculating the solution. The first solve can take several seconds
+            while the solver sets itself up.
+          </span>
+        </div>
+      )
+    }
+
+    if (solveEntry.status === 'failed') {
+      return (
+        <div className="solution is-error" role="alert">
+          <h4>The solver ran into a problem</h4>
+          <p className="solution-note">
+            {solveEntry.message} Try again, or reload the page if it keeps
+            happening.
+          </p>
+        </div>
+      )
+    }
+
+    const outcome = solveEntry.outcome
+
+    if (outcome.status !== 'solved') {
+      return (
+        <div className="solution is-error" role="alert">
+          <h4>No solution was produced</h4>
+          <p className="solution-note">{outcome.message}</p>
+        </div>
+      )
+    }
+
+    if (outcome.alreadySolved) {
+      return (
+        <div className="solution" role="region" aria-label="Solution">
+          <h4>Already solved</h4>
+          <p className="solution-note">
+            Your cube is already solved, so no moves are needed.
+          </p>
+        </div>
+      )
+    }
+
+    const centers = getCenterColors(cube)
+    return (
+      <div className="solution" role="region" aria-label="Solution">
+        <h4>
+          Solution found: {outcome.moves.length}{' '}
+          {outcome.moves.length === 1 ? 'move' : 'moves'}
+        </h4>
+        <p className="solution-line">{outcome.moves.join(' ')}</p>
+        <p className="solution-note">
+          Hold the cube with the {centers.U} center on top and the{' '}
+          {centers.F} center facing you. Clockwise and counterclockwise always
+          mean as you look straight at the face being turned.
+        </p>
+        <ol className="solution-steps">
+          {outcome.moves.map((move, index) => (
+            <li key={`${index}-${move}`} className="solution-step">
+              <span className="step-number">{index + 1}</span>
+              <span className="step-move">{move}</span>
+              <span className="step-text">{describeMove(move, centers)}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+    )
   }
 
   return (
@@ -414,6 +536,27 @@ function CubeInput() {
                   )}
                 </div>
               )}
+            </div>
+
+            <div className="solve">
+              <h3 className="counts-title">Solve the cube</h3>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={handleSolve}
+                disabled={!canSolve}
+              >
+                {isSolving ? 'Solving...' : 'Solve cube'}
+              </button>
+
+              {!isSolving && !(result && result.status === 'valid') && (
+                <p className="solve-hint">
+                  Validate the cube first. Solving is available once every
+                  check passes.
+                </p>
+              )}
+
+              {renderSolution()}
             </div>
           </div>
         </div>
