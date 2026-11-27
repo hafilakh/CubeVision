@@ -1,4 +1,6 @@
 import { useRef, useState } from 'react'
+import { solveCubeAsync, warmUpSolver } from '../utils/solveCubeAsync'
+import CubeViewer from './CubeViewer'
 import {
   FACE_NAMES,
   FACE_VIEWS,
@@ -6,7 +8,6 @@ import {
   validateCube,
 } from '../utils/cubeValidator'
 import { describeMove } from '../utils/describeMove'
-import { solveCubeAsync, warmUpSolver } from '../utils/solveCubeAsync'
 
 const CENTER_INDEX = 4
 const EDITABLE_PER_FACE = 8
@@ -560,6 +561,8 @@ function CubeInput() {
             </div>
           </div>
         </div>
+
+        <CubeViewer cube={cube} />
       </div>
 
       <dialog
