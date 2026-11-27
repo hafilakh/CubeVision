@@ -30,7 +30,7 @@ function rotateClockwise(vector, axis) {
 const keyOf = (position, normal) => `${position.join(',')}|${normal.join(',')}`
 
 // Flat list of all 54 stickers, in FACE_IDS order, 9 per face.
-const FACELETS = FACE_IDS.flatMap((face) => {
+export const FACELETS = FACE_IDS.flatMap((face) => {
   const { n, r, d } = GEOMETRY[face]
   return Array.from({ length: 9 }, (_, index) => {
     const col = (index % 3) - 1
