@@ -1,3 +1,4 @@
+import HeroCube from './HeroCube'
 function Hero() {
   function handleStartLearning() {
     console.log('Start Learning clicked')
@@ -23,16 +24,7 @@ function Hero() {
           </button>
         </div>
 
-        <div
-          className="cube-stage"
-          role="img"
-          aria-label="Reserved space for the interactive 3D cube"
-        >
-          <p className="cube-stage-label">
-            Interactive 3D cube
-            <span>Coming in a later phase</span>
-          </p>
-        </div>
+<HeroCube />
       </div>
     </section>
   )
