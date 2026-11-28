@@ -84,9 +84,9 @@ Each move is shown with a number and a plain-English sentence, for example "Turn
 
 ### Fluid Bloom homepage cube
 
-The homepage shows a glossy black cube. Click or touch it and colored ink spreads over and around it, blending and drifting like dye in water before fading away. Dragging rotates the cube and leaves a trail, the mouse wheel and pinch gestures zoom within limits, and Reset view restores the starting angle.
+The homepage shows a glossy black cube. Click or touch it and colored ink spreads over and around it, blending and drifting like dye in water before fading away. Dragging rotates the cube and leaves a trail, the mouse wheel and pinch gestures zoom within limits, and the mouse wheel and pinch gestures zoom within limits.
 
-The effect is computed on the GPU: dye is stored in two small textures and carried along a smooth, slowly changing swirl pattern each frame. It is purely decorative. It has no connection to the cube you enter, the validator, the solver, or any saved data, and an automated test guards that separation. Effects can be paused with a button, and they start paused when your system requests reduced motion. A vertical swipe on a phone still scrolls the page, and the mouse wheel scrolls the page once the cube reaches its zoom limit.
+The effect is computed on the GPU: dye is stored in two small textures and carried along a smooth, slowly changing swirl pattern each frame. It is purely decorative. It has no connection to the cube you enter, the validator, the solver, or any saved data, and an automated test guards that separation. Effects automatically respect the system's reduced-motion preference. A vertical swipe on a phone still scrolls the page, and the mouse wheel scrolls the page once the cube reaches its zoom limit.
 
 ## Technology Stack
 
